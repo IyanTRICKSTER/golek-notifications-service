@@ -2,6 +2,7 @@ package msg_broker
 
 import (
 	"context"
+	"encoding/json"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golek_notifications_service/pkg/contracts"
 	"golek_notifications_service/pkg/models"
@@ -36,12 +37,12 @@ func (c *MQConsumer) Listen() {
 	failOnError(err, "Failed to declare an exchange!")
 
 	queue, err := channel.QueueDeclare(
-		"",    // name
-		false, // durable
-		false, // delete when unused
-		true,  // exclusive
-		false, // no-wait
-		nil,   // arguments
+		"new_post_queue", // name
+		true,             // durable
+		false,            // delete when unused
+		false,            // exclusive
+		false,            // no-wait
+		nil,              // arguments
 	)
 	failOnError(err, "Failed to declare a queue!")
 
@@ -54,10 +55,17 @@ func (c *MQConsumer) Listen() {
 	)
 	failOnError(err, "Failed to bind a queue")
 
+	err = channel.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
+	failOnError(err, "Failed to set QoS")
+
 	messages, err := channel.Consume(
 		queue.Name, // queue
 		"",         // consumer
-		true,       // auto ack
+		false,      // auto ack
 		false,      // exclusive
 		false,      // no local
 		false,      // no wait
@@ -68,21 +76,39 @@ func (c *MQConsumer) Listen() {
 	var forever chan struct{}
 
 	go func() {
+
+		var msgPayload contracts.MessagePayload
+
 		err := func() error {
+
+			//consume messages
 			for d := range messages {
 				log.Printf(" [x] %s", d.Body)
-				_, err := c.notificationService.Broadcast(context.TODO(), "newPost", &models.Message{
-					Title:    string(d.Body),
-					Body:     "",
-					ImageUrl: "",
+
+				//Decode struct payload
+				err := json.Unmarshal(d.Body, &msgPayload)
+				if err != nil {
+					return err
+				}
+
+				_, err = c.notificationService.Broadcast(context.TODO(), "newPost", &models.Message{
+					Title:    msgPayload.Title,
+					Body:     msgPayload.Body,
+					ImageUrl: msgPayload.ImageUrl,
 				})
+
+				d.Ack(false)
+
 				return err
 			}
+
 			return nil
 		}()
+
 		if err != nil {
 			panic(err)
 		}
+
 	}()
 
 	log.Printf(" [*] Waiting for message. To exit press CTRL+C")
