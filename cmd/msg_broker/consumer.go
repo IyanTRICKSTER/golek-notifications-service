@@ -79,34 +79,30 @@ func (c *MQConsumer) Listen() {
 
 		var msgPayload contracts.MessagePayload
 
-		err := func() error {
+		//consume messages
+		for d := range messages {
+			log.Printf(" [x] %s", d.Body)
 
-			//consume messages
-			for d := range messages {
-				log.Printf(" [x] %s", d.Body)
-
-				//Decode struct payload
-				err := json.Unmarshal(d.Body, &msgPayload)
-				if err != nil {
-					return err
-				}
-
-				_, err = c.notificationService.Broadcast(context.TODO(), "newPost", &models.Message{
-					Title:    msgPayload.Title,
-					Body:     msgPayload.Body,
-					ImageUrl: msgPayload.ImageUrl,
-				})
-
-				d.Ack(false)
-
-				return err
+			//Decode struct payload
+			err := json.Unmarshal(d.Body, &msgPayload)
+			if err != nil {
+				log.Println(err.Error())
 			}
 
-			return nil
-		}()
+			_, err = c.notificationService.Broadcast(context.TODO(), "newPost", &models.Message{
+				Title:    msgPayload.Title,
+				Body:     msgPayload.Body,
+				ImageUrl: msgPayload.ImageUrl,
+			})
+			if err != nil {
+				log.Println(err.Error())
+			}
 
-		if err != nil {
-			panic(err)
+			err = d.Ack(false)
+			if err != nil {
+				log.Println(err.Error())
+			}
+
 		}
 
 	}()

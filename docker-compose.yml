@@ -1,0 +1,26 @@
+version: "2.1"
+
+services:
+  app:
+    container_name: golek_notifications_service_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    restart: on-failure
+    volumes:
+      - app_vol:/app
+      - ./firebaseKey.json:/root/firebaseKey.json
+    networks:
+      default:
+        ipv4_address: 172.53.1.13
+
+volumes:
+  app_vol:
+
+networks:
+  default:
+    name: golek_network_br
+    external: true
+#    driver: bridge
