@@ -18,7 +18,7 @@ type FirebaseMessagingRepository struct {
 	client *messaging.Client
 }
 
-func NewFirebaseMessagingRepository(client *messaging.Client) contracts.NotificationRepository {
+func NewFirebaseMessagingRepository(client *messaging.Client) contracts.ICloudMessageRepo {
 	return &FirebaseMessagingRepository{client: client}
 }
 
@@ -45,6 +45,56 @@ func (f *FirebaseMessagingRepository) SendToTopic(ctx context.Context, topic str
 	}
 
 	return status.SendMessageSuccess, response, nil
+}
+
+func (f *FirebaseMessagingRepository) SubscribeToTopic(ctx context.Context, topic string, registrationTokens []string) (status.OperationStatus, string, error) {
+	//topic := "highScores"
+
+	// [START subscribe_golang]
+	// These registration tokens come from the client FCM SDKs.
+	//registrationTokens := []string{
+	//	"YOUR_REGISTRATION_TOKEN_1",
+	//	// ...
+	//	"YOUR_REGISTRATION_TOKEN_n",
+	//}
+
+	// Subscribe the devices corresponding to the registration tokens to the
+	// topic.
+	response, err := f.client.SubscribeToTopic(ctx, registrationTokens, topic)
+	if err != nil {
+		log.Println(err)
+		return status.Failed, "", err
+	}
+	// See the TopicManagementResponse reference documentation
+	// for the contents of response.
+	fmt.Println(response.SuccessCount, "tokens were subscribed successfully")
+	// [END subscribe_golang]
+	return status.Success, "", nil
+}
+
+func (f *FirebaseMessagingRepository) UnsubscribeFromTopic(ctx context.Context, topic string, registrationTokens []string) (status.OperationStatus, string, error) {
+	//topic := "highScores"
+
+	// [START unsubscribe_golang]
+	// These registration tokens come from the client FCM SDKs.
+	//registrationTokens := []string{
+	//	"YOUR_REGISTRATION_TOKEN_1",
+	//	// ...
+	//	"YOUR_REGISTRATION_TOKEN_n",
+	//}
+
+	// Unsubscribe the devices corresponding to the registration tokens from
+	// the topic.
+	response, err := f.client.UnsubscribeFromTopic(ctx, registrationTokens, topic)
+	if err != nil {
+		log.Println(err)
+		return status.Failed, "", err
+	}
+	// See the TopicManagementResponse reference documentation
+	// for the contents of response.
+	fmt.Println(response.SuccessCount, "tokens were unsubscribed successfully")
+	// [END unsubscribe_golang]
+	return status.Success, "", nil
 }
 
 func getDecodedFireBaseKey() ([]byte, error) {
@@ -352,50 +402,4 @@ func allPlatformsMessage() *messaging.Message {
 	}
 	// [END multi_platforms_message_golang]
 	return message
-}
-
-func subscribeToTopic(ctx context.Context, client *messaging.Client) {
-	topic := "highScores"
-
-	// [START subscribe_golang]
-	// These registration tokens come from the client FCM SDKs.
-	registrationTokens := []string{
-		"YOUR_REGISTRATION_TOKEN_1",
-		// ...
-		"YOUR_REGISTRATION_TOKEN_n",
-	}
-
-	// Subscribe the devices corresponding to the registration tokens to the
-	// topic.
-	response, err := client.SubscribeToTopic(ctx, registrationTokens, topic)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// See the TopicManagementResponse reference documentation
-	// for the contents of response.
-	fmt.Println(response.SuccessCount, "tokens were subscribed successfully")
-	// [END subscribe_golang]
-}
-
-func unsubscribeFromTopic(ctx context.Context, client *messaging.Client) {
-	topic := "highScores"
-
-	// [START unsubscribe_golang]
-	// These registration tokens come from the client FCM SDKs.
-	registrationTokens := []string{
-		"YOUR_REGISTRATION_TOKEN_1",
-		// ...
-		"YOUR_REGISTRATION_TOKEN_n",
-	}
-
-	// Unsubscribe the devices corresponding to the registration tokens from
-	// the topic.
-	response, err := client.UnsubscribeFromTopic(ctx, registrationTokens, topic)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// See the TopicManagementResponse reference documentation
-	// for the contents of response.
-	fmt.Println(response.SuccessCount, "tokens were unsubscribed successfully")
-	// [END unsubscribe_golang]
 }

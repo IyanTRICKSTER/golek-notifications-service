@@ -90,6 +90,7 @@ func (c *MQConsumer) Listen() {
 			}
 
 			_, err = c.notificationService.Broadcast(context.TODO(), "newPost", &models.Message{
+				UserID:   msgPayload.UserID,
 				Title:    msgPayload.Title,
 				Body:     msgPayload.Body,
 				ImageUrl: msgPayload.ImageUrl,

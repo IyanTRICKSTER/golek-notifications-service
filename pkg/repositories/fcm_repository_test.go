@@ -35,6 +35,7 @@ func TestFirebaseCloudMessagingRepository(t *testing.T) {
 		Title:    "Heya boy!",
 		Body:     "Got something?",
 		ImageUrl: "https://image.apktoy.com/img/13/com.nkl.xnxx.app/icon.png",
+		UserID:   100,
 	})
 	if err != nil {
 		t.Error(res)
